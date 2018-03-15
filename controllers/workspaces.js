@@ -18,7 +18,7 @@ var createWorkspace = function(params, req, res) {
     return;
   }
 
-  fs.mkdir(__dirname + '/../workspaces/' + req.user + "/" + workspaceName, '0700', function(err) {
+  fs.mkdir(__dirname + '/../workspaces/' + workspaceName, '0700', function(err) {
     if(err) {
       respondInvalidWorkspace(res);
       return;
@@ -31,7 +31,7 @@ var createWorkspace = function(params, req, res) {
 var createWorkspaceKillTimeout = function(req, workspaceProcess, workspaceName) {
   var timeout = setTimeout(function() {
     process.kill(-workspaceProcess.pid, 'SIGTERM');
-    req.app.get('runningWorkspaces')[req.user + '/' + workspaceName] = undefined;
+    req.app.get('runningWorkspaces')[workspaceName] = undefined;
     console.info("Killed workspace " + workspaceName);
    }, 900000); //Workspaces have a lifetime of 15 minutes
 
@@ -53,7 +53,7 @@ exports.create = function(req, res) {
  * GET workspaces listing.
  */
 exports.list = function(req, res){
-  fs.readdir(__dirname + '/../workspaces/' + req.user, function(err, files) {
+  fs.readdir(__dirname + '/../workspaces/', function(err, files) {
     if(err) {
       res.status(500);
       res.json({error: err});
@@ -82,7 +82,7 @@ exports.destroy = function(req, res) {
     return;
   }
 
-  rimraf(__dirname + "/../workspaces/" + req.user + "/" + workspaceName, function(err) {
+  rimraf(__dirname + "/../workspaces/" + workspaceName, function(err) {
     if(err) {
       res.status("500");
       res.json({msg: "Something went wrong :("});
@@ -144,14 +144,14 @@ exports.destroy = function(req, res) {
       return;
     }
 
-   if(typeof req.app.get('runningWorkspaces')[req.user + '/' + workspaceName] === 'undefined'){
+   if(typeof req.app.get('runningWorkspaces')[workspaceName] === 'undefined'){
        getNextAvailablePort(function(nextFreePort){
             console.log("Starting " + __dirname + '/../c9/server.js for workspace ' + workspaceName + " on port " + nextFreePort);
-            var workspaceDir = __dirname + '/../workspaces/' + req.user + '/' + workspaceName
+            var workspaceDir = __dirname + '/../workspaces/' + workspaceName
             var out = fs.openSync(workspaceDir + '/.c9.log', 'a');
             var workspace = fork(__dirname + '/../c9/server.js', ['-w', workspaceDir, '--listen', '0.0.0.0', '-p', nextFreePort, '-a', ':'], {detached: true, stdio: [out, out, out, 'ipc']});
            
-            req.app.get('runningWorkspaces')[req.user + '/' + workspaceName] = {
+            req.app.get('runningWorkspaces')[workspaceName] = {
                 killTimeout: createWorkspaceKillTimeout(req, workspace, workspaceName),
                 process: workspace,
                 name: workspaceName,
@@ -162,8 +162,8 @@ exports.destroy = function(req, res) {
             res.json({msg: "Attempted to start workspace", user: req.user, url: req.app.settings.baseUrl + ":" + nextFreePort}); 
        });
    } else {
-       console.log("Found running workspace", req.app.get('runningWorkspaces')[req.user + '/' + workspaceName].url);
-       res.json({msg: "Found running workspace", user: req.user, url: req.app.get('runningWorkspaces')[req.user + '/' + workspaceName].url});
+       console.log("Found running workspace", req.app.get('runningWorkspaces')[workspaceName].url);
+       res.json({msg: "Found running workspace", user: req.user, url: req.app.get('runningWorkspaces')[workspaceName].url});
    }
    
  }
@@ -172,7 +172,7 @@ exports.destroy = function(req, res) {
  * POST to keep the workspace alive
 */
  exports.keepAlive = function(req, res) {
-   var workspace = req.app.get('runningWorkspaces')[req.user + '/' + req.params.name];
+   var workspace = req.app.get('runningWorkspaces')[req.params.name];
    clearTimeout(workspace.killTimeout);
    workspace.killTimeout = createWorkspaceKillTimeout(req, workspace.process, workspace.name);
    res.send();

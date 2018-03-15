@@ -23,7 +23,7 @@ var express = require('express'),
   flash = require('connect-flash'),
   helpers = require('view-helpers'),
   consolidate = require('consolidate'),
-  GithubStrategy = require('passport-github').Strategy;
+  GitLabStrategy = require('passport-gitlab').Strategy;
 try {
   
   var config = require(__dirname + '/config.js');
@@ -60,24 +60,27 @@ app.set('baseUrl', config.BASE_URL);
 app.set('runningWorkspaces', {});
 
 //Auth
-passport.use(new GithubStrategy({
-    clientID: config.GITHUB_CLIENT_ID,
-    clientSecret: config.GITHUB_CLIENT_SECRET,
-    callbackURL: app.get('baseUrl') + ':' + app.get('port') + '/auth/github/callback'
+passport.use(new GitLabStrategy({
+    clientID: config.GITLAB_CLIENT_ID,
+    clientSecret: config.GITLAB_CLIENT_SECRET,
+    gitlabURL : "https://git.labs.nuance.com",
+    callbackURL: app.get('baseUrl') + ':' + app.get('port') + '/auth/gitlab/callback'
   },
   function(accessToken, refreshToken, profile, done) {
     var username = path.basename(profile.username.toLowerCase());
-    if (!fs.existsSync(__dirname + '/workspaces/' + path.basename(username))) {
-      if (config.PERMITTED_USERS !== false && config.PERMITTED_USERS.indexOf(username)) return done('Sorry, not allowed :(', null);
+    
+    if (!fs.existsSync(__dirname + '/workspaces/')) {
+    //TODO: check for permissions
+        if (config.PERMITTED_USERS !== false && config.PERMITTED_USERS.indexOf(username)) return done('Sorry, not allowed :(', null);
 
       //Okay, that is slightly unintuitive: fs.mkdirSync returns "undefined", when successful..
-      if (fs.mkdirSync(__dirname + '/workspaces/' + path.basename(username), '0700') !== undefined) {
-        return done("Cannot create user", null);
-      }
-      else {
-        return done(null, username);
-      }
-    }
+//      if (fs.mkdirSync(__dirname + '/workspaces/' + path.basename(username), '0700') !== undefined) {
+//        return done("Cannot create user", null);
+//      }
+//      else {
+            return done(null, username);
+//      }
+        }
     return done(null, username);
   }
 ));
@@ -115,9 +118,9 @@ if ('development' == app.get('env')) {
 }
 
 //Auth requests
-app.get('/auth/github', passport.authenticate('github'), function(req, res) {});
-app.get('/auth/github/callback',
-  passport.authenticate('github', {
+app.get('/auth/gitlab', passport.authenticate('gitlab'), function(req, res) {});
+app.get('/auth/gitlab/callback',
+  passport.authenticate('gitlab', {
     failureRedirect: '/'
   }),
   function(req, res) {
@@ -162,7 +165,7 @@ if (config.SSL && config.SSL.key && config.SSL.cert) {
 }
 else {
   server = http.createServer(app);
-  console.log(app.get('baseUrl') + ':' + app.get('port') + '/auth/github/callback');
+  console.log(app.get('baseUrl') + ':' + app.get('port') + '/auth/gitlab/callback');
 }
 
 server.listen(app.get('port'), function() {

@@ -2,8 +2,8 @@
 echo "Installing Cloud9Hub..."
 echo "-----------------------"
 
-git clone https://github.com/Harjot1Singh/cloud9hub.git cloud9hub
-cd cloud9hub
+#git clone https://github.com/Harjot1Singh/cloud9hub.git cloud9hub
+#cd cloud9hub
 npm install
 npm install -g bower
 bower install
