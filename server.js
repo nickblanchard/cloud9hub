@@ -72,20 +72,20 @@ var passport_setup_strategy = function(){
                 },
                 function (accessToken, refreshToken, profile, done) { 
                     var username = path.basename(profile.username.toLowerCase());
-    
-                    if (!fs.existsSync(__dirname + '/workspaces/')) {
-                    //TODO: check for permissions
-                        if (config.PERMITTED_USERS !== false && config.PERMITTED_USERS.indexOf(username)) return done('Sorry, not allowed :(', null);
-
-                      //Okay, that is slightly unintuitive: fs.mkdirSync returns "undefined", when successful..
-                //      if (fs.mkdirSync(__dirname + '/workspaces/' + path.basename(username), '0700') !== undefined) {
-                //        return done("Cannot create user", null);
-                //      }
-                //      else {
-                            return done(null, username);
-                //      }
-                        }
-                    return done(null, username);   
+                    profile.accessToken = accessToken;
+//                    if (!fs.existsSync(__dirname + '/workspaces/')) {
+//                    //TODO: check for permissions
+//                        if (config.PERMITTED_USERS !== false && config.PERMITTED_USERS.indexOf(username)) return done('Sorry, not allowed :(', null);
+//
+//                      //Okay, that is slightly unintuitive: fs.mkdirSync returns "undefined", when successful..
+//                //      if (fs.mkdirSync(__dirname + '/workspaces/' + path.basename(username), '0700') !== undefined) {
+//                //        return done("Cannot create user", null);
+//                //      }
+//                //      else {
+//                            return done(null, username, accessToken);
+//                //      }
+//                        }
+                    return done(null, profile);   
                 }
             ));
 
