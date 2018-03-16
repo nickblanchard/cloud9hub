@@ -2,9 +2,16 @@
 {% block content %}
     <div class="text-center">
         <h1 class="centered bello login-title">Welcome to Cloud9Hub!</h1>
-        <p class="centered">
-            <a class="btn btn-lg btn-default login-button" href="/auth/gitlab"><i class='fa fa-github'></i>&nbsp;&nbsp;Sign in with Gitlab</a>
-        </p>
+        <div class="centered">
+            <form name="form" action="/auth/gitlab" method="get">
+                <div class="form-group col-sm-3 col-sm-offset-5">
+                    <h5>Username</h5>
+                    <input type="text" class="form-control" name="username" required='required'/><br/>
+                    <button type="submit" class="btn btn-lg btn-primary login-button"><i class='fa fa-github'></i>&nbsp;&nbsp;Sign in with Gitlab</button>
+                </div>
+            </form>
+<!--            <a class="btn btn-lg btn-default login-button" href="/auth/gitlab"><i class='fa fa-github'></i>&nbsp;&nbsp;Sign in with Gitlab</a>-->
+        </div>
     </div>
     <!--<div class='row login-row'>
         <div class='col-xs-12 login-col'>

@@ -59,31 +59,66 @@ app.set('views', __dirname + '/views');
 app.set('baseUrl', config.BASE_URL);
 app.set('runningWorkspaces', {});
 
-//Auth
-passport.use(new GitLabStrategy({
-    clientID: config.GITLAB_CLIENT_ID,
-    clientSecret: config.GITLAB_CLIENT_SECRET,
-    gitlabURL : "https://git.labs.nuance.com",
-    callbackURL: app.get('baseUrl') + ':' + app.get('port') + '/auth/gitlab/callback'
-  },
-  function(accessToken, refreshToken, profile, done) {
-    var username = path.basename(profile.username.toLowerCase());
+var isStrategySetup = false;
+var passport_setup_strategy = function(){
+    return function(req, res, next){
+        if(!isStrategySetup){
+            console.log("Username: " + req.query.username);
+            passport.use(new GitLabStrategy({
+                    clientID: config.GITLABOBJ[req.query.username].client_id,
+                    clientSecret: config.GITLABOBJ[req.query.username].client_secret,
+                    gitlabURL : "https://git.labs.nuance.com",
+                    callbackURL: app.get('baseUrl') + ':' + app.get('port') + '/auth/gitlab/callback'
+                },
+                function (accessToken, refreshToken, profile, done) { 
+                    var username = path.basename(profile.username.toLowerCase());
     
-    if (!fs.existsSync(__dirname + '/workspaces/')) {
-    //TODO: check for permissions
-        if (config.PERMITTED_USERS !== false && config.PERMITTED_USERS.indexOf(username)) return done('Sorry, not allowed :(', null);
+                    if (!fs.existsSync(__dirname + '/workspaces/')) {
+                    //TODO: check for permissions
+                        if (config.PERMITTED_USERS !== false && config.PERMITTED_USERS.indexOf(username)) return done('Sorry, not allowed :(', null);
 
-      //Okay, that is slightly unintuitive: fs.mkdirSync returns "undefined", when successful..
-//      if (fs.mkdirSync(__dirname + '/workspaces/' + path.basename(username), '0700') !== undefined) {
-//        return done("Cannot create user", null);
-//      }
-//      else {
-            return done(null, username);
-//      }
+                      //Okay, that is slightly unintuitive: fs.mkdirSync returns "undefined", when successful..
+                //      if (fs.mkdirSync(__dirname + '/workspaces/' + path.basename(username), '0700') !== undefined) {
+                //        return done("Cannot create user", null);
+                //      }
+                //      else {
+                            return done(null, username);
+                //      }
+                        }
+                    return done(null, username);   
+                }
+            ));
+
+            isStrategySetup = true;
         }
-    return done(null, username);
-  }
-));
+        next();
+    };
+}
+//Auth
+//passport.use(new GitLabStrategy({
+//    clientID: config.GITLABOBJ[].client_id,
+//    clientSecret: config.GITLABOBJ[].client_id,
+//    gitlabURL : "https://git.labs.nuance.com",
+//    callbackURL: app.get('baseUrl') + ':' + app.get('port') + '/auth/gitlab/callback'
+//  },
+//  function(accessToken, refreshToken, profile, done) {
+//    var username = path.basename(profile.username.toLowerCase());
+//    
+//    if (!fs.existsSync(__dirname + '/workspaces/')) {
+//    //TODO: check for permissions
+//        if (config.PERMITTED_USERS !== false && config.PERMITTED_USERS.indexOf(username)) return done('Sorry, not allowed :(', null);
+//
+//      //Okay, that is slightly unintuitive: fs.mkdirSync returns "undefined", when successful..
+////      if (fs.mkdirSync(__dirname + '/workspaces/' + path.basename(username), '0700') !== undefined) {
+////        return done("Cannot create user", null);
+////      }
+////      else {
+//            return done(null, username);
+////      }
+//        }
+//    return done(null, username);
+//  }
+//));
 
 //Middlewares
 // Favicon cache taken out temporarily
@@ -118,7 +153,7 @@ if ('development' == app.get('env')) {
 }
 
 //Auth requests
-app.get('/auth/gitlab', passport.authenticate('gitlab'), function(req, res) {});
+app.get('/auth/gitlab', passport_setup_strategy(), passport.authenticate('gitlab'), function(req, res) {});
 app.get('/auth/gitlab/callback',
   passport.authenticate('gitlab', {
     failureRedirect: '/'
